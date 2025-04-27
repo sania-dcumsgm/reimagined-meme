@@ -1,0 +1,182 @@
+---
+title: "UNICEF Global Development Insights"
+author: "Saniya"
+format:
+  html:
+    embed-resources: true
+    code-fold: true
+    code-tools: true
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    theme: litera
+    highlight-style: atom-one-dark
+    smooth-scroll: true
+---
+
+# UNICEF Global Development Insights: Proportion of Population Using Sanitation Facilities
+
+*Sanitation is fundamental to public health and human dignity.*  
+Despite notable progress, **millions worldwide still lack access** to essential sanitation facilities.
+
+This report presents:
+
+- A **global snapshot** of access to sanitation services  
+- Emphasis on both **challenges and achievements**  
+- Insights from key indicators on health and infrastructure  
+
+### 🔍 Why It Matters
+
+Since **2000**, billions of people have gained access to:
+- **Clean drinking water**
+- **Improved sanitation**
+- **Basic hygiene services**
+
+Yet, progress is **uneven**:
+- Many **African nations** continue to struggle with basic sanitation infrastructure.
+- In contrast, countries like **Australia**, **Canada**, and the **United States** show the **highest levels of access**.
+
+---
+
+
+
+```{python}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 6
+
+# Import necessary libraries
+import pandas as pd
+import geopandas as gpd
+import plotnine as p9
+import numpy as np
+
+# Load datasets
+indicator_df = pd.read_csv('unicef_indicator_1.csv')
+metadata_df = pd.read_csv('unicef_metadata.csv')
+
+# Merge datasets
+merged_data = indicator_df.merge(metadata_df, on=['country', 'alpha_2_code', 'alpha_3_code', 'numeric_code'], how='left')
+data_filtered = merged_data.dropna(subset=['obs_value'])
+data_filtered = data_filtered.rename(columns={'obs_value': 'Value', 'time_period': 'Year', 'country': 'Country'})
+data_filtered['Year'] = pd.to_numeric(data_filtered['Year'], errors='coerce')
+data_filtered = data_filtered.dropna(subset=['Year'])
+```
+
+## World Map Visualization
+
+```{python}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 6
+#| fig-cap: "Caption"
+
+world = gpd.read_file('https://naturalearth.s3.amazonaws.com/110m_cultural/ne_110m_admin_0_countries.zip')
+world_map = world.merge(data_filtered, left_on='NAME', right_on='Country', how='left')
+
+world_map_chart = (
+    p9.ggplot(world_map) +
+    p9.geom_map(p9.aes(fill='Value')) +
+    p9.theme_minimal() +
+    p9.scale_fill_cmap(name='Sanitation Access (%)', cmap_name='viridis') +
+    p9.ggtitle('Global Sanitation Facilities Distribution') +
+    p9.theme(figure_size=(12, 6))
+)
+
+world_map_chart
+```
+
+## Bar Chart Visualization
+
+```{python}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 6
+#| fig-cap: "Caption"
+
+bar_chart = (
+    p9.ggplot(data_filtered, p9.aes(x='reorder(Country, Value)', y='Value')) +
+    p9.geom_bar(stat='identity', fill='#4c72b0') +
+    p9.coord_flip() +
+    p9.theme_minimal() +
+    p9.ggtitle('Sanitation Facility Access by Country') +
+    p9.xlab('Country') +
+    p9.ylab('Sanitation Access (%)')
+)
+
+bar_chart
+```
+
+## Scatter Plot with Regression
+
+_Sanitation and GDP have a mutually beneficial relationship. People in countries with better sanitation are healthier and more productive, which boosts the economy. On the other hand, greater GDP makes it possible to make better investments in infrastructure related to sanitation._
+
+```{python}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 6
+#| fig-cap: "Caption"
+
+scatter_plot = (
+    p9.ggplot(data_filtered, p9.aes('Year', 'Value')) +
+    p9.geom_point(alpha=0.6, color='#55a868') +
+    p9.geom_smooth(method='lm', color='darkblue', se=True) +
+    p9.theme_minimal() +
+    p9.ggtitle('Relationship Between Year and Sanitation Access') +
+    p9.xlab('Year') +
+    p9.ylab('Sanitation Access (%)')
+)
+
+scatter_plot
+```
+
+## Time-Series Visualization
+
+```{python}
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-align: center
+#| fig-width: 8
+#| fig-height: 6
+#| fig-cap: "Caption"
+
+time_series_grouped = (
+    p9.ggplot(data_filtered, p9.aes('Year', 'Value', group='Country')) +
+    p9.geom_line(alpha=0.4, color='gray') +
+    p9.stat_summary(
+        p9.aes(group=1), fun_y=np.mean, geom='line', color='red', size=1.2
+    ) +
+    p9.theme_minimal() +
+    p9.labs(
+        title='Sanitation Access Over Time (All Countries with Global Average)',
+        x='Year',
+        y='Sanitation Facility Access (%)'
+    )
+)
+
+time_series_grouped
+```
+### 🎯 Key Message
+
+> “Achieving **universal access** to sanitation is not just a development goal — it’s a human right.”
+
+---
+
+### ✅ Highlighted Insights:
+
+- 📈 **Global average sanitation access** is improving.
+- 🌍 **Regional disparities** remain stark.
+- 💡 **Policy attention and funding** are crucial for underserved regions.
